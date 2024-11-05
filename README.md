@@ -36,9 +36,7 @@
 }
 ```
 ### 使用:
-
-下载自己的release,和myclient.json,配置自己的clash_config_files文件即可
-
+下载自己的版本release,和myclient.json,配置自己的clash_config_files文件即可
 ### 线程池
 线程池可以参考[poolhttp](https://github.com/pzx521521/pixelcut/blob/master/poolhttp.go)
 以及[poolhttp_test](https://github.com/pzx521521/pixelcut/blob/master/poolhttp_test.go)
