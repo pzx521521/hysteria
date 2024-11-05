@@ -1,60 +1,70 @@
 # ![Hysteria 2](logo.svg)
 
-[![License][1]][2] [![Release][3]][4] [![Telegram][5]][6] [![Discussions][7]][8]
+# 用hysteria2做ip池
++ 起因爬虫做了ip的并发限制，大量爬取之后ip被封，所以想用hysteria2做ip池.
++ 为什么用hysteria2也是因为目前来看hysteria2用的比ss多
++ hysteria2/clash/ss 这些本身编译好的程序都是不支持 访问同一个网站的时候使用不同ip的.唯一方案是开启多个客户端,但是很麻烦.
++ ip池本身使用的是clash的配置文件
++ 这种pr官方肯定不会接受... 放一下魔改了的源码
+### 结果
+```bash
+2024-11-04T00:30:38+08:00       INFO    HTTP proxy server listening     {"addr": "127.0.0.1:8080"}
+2024-11-04T00:30:38+08:00       INFO    HTTP proxy server listening     {"addr": "127.0.0.1:8088"}
+2024-11-04T00:30:38+08:00       INFO    HTTP proxy server listening     {"addr": "127.0.0.1:8085"}
+2024-11-04T00:30:38+08:00       INFO    HTTP proxy server listening     {"addr": "127.0.0.1:8086"}
+2024-11-04T00:30:38+08:00       INFO    HTTP proxy server listening     {"addr": "127.0.0.1:8089"}
+2024-11-04T00:30:38+08:00       INFO    HTTP proxy server listening     {"addr": "127.0.0.1:8081"}
+2024-11-04T00:30:38+08:00       INFO    HTTP proxy server listening     {"addr": "127.0.0.1:8084"}
+2024-11-04T00:30:38+08:00       INFO    HTTP proxy server listening     {"addr": "127.0.0.1:8082"}
+2024-11-04T00:30:38+08:00       INFO    HTTP proxy server listening     {"addr": "127.0.0.1:8087"}
+2024-11-04T00:30:38+08:00       INFO    HTTP proxy server listening     {"addr": "127.0.0.1:8083"}
+```
 
-[1]: https://img.shields.io/badge/license-MIT-blue
-[2]: LICENSE.md
-[3]: https://img.shields.io/github/v/release/apernet/hysteria?style=flat-square
-[4]: https://github.com/apernet/hysteria/releases
-[5]: https://img.shields.io/badge/chat-Telegram-blue?style=flat-square
-[6]: https://t.me/hysteria_github
-[7]: https://img.shields.io/github/discussions/apernet/hysteria?style=flat-square
-[8]: https://github.com/apernet/hysteria/discussions
+### 修改了两个文件: `app/cmd/myclient.go`和`app/main.go`
 
-<h2 style="text-align: center;">Hysteria is a powerful, lightning fast and censorship resistant proxy.</h2>
+配置文件如下`myclient.json`:  
++ start_port 从那个端口开始代理
++ count 代理的几个端口
++ clash_config_files clash的配置文件,数组可以填多个,会自动读取所有hysteria2的配置,并通过延迟决定前count个
+```json
+{
+  "start_port": 7000,
+  "count": 10,
+  "clash_config_files": [
+    "/Users/parapeng/Library/Application Support/io.github.clash-verge-rev.clash-verge-rev/profiles/ROO5OxI3HLEr.yaml"
+  ]
+}
+```
+### 使用:
 
-### [Get Started](https://v2.hysteria.network/)
+下载自己的release,和myclient.json,配置自己的clash_config_files文件即可
 
-### [中文文档](https://v2.hysteria.network/zh/)
+### 线程池
+线程池可以参考[poolhttp](https://github.com/pzx521521/pixelcut/blob/master/poolhttp.go)
+以及[poolhttp_test](https://github.com/pzx521521/pixelcut/blob/master/poolhttp_test.go)
+示例结果如下:
+```bash
+2024/11/05 16:41:56 resp.Body: {"ip":"83.147.17.189","country":"GB","country_name":"United Kingdom","region_code":"ENG","in_eu":true,"continent":"EU"}
+2024/11/05 16:41:56 resp.Body: {"ip":"83.147.17.189","country":"GB","country_name":"United Kingdom","region_code":"ENG","in_eu":true,"continent":"EU"}
+2024/11/05 16:41:57 resp.Body: {"ip":"61.224.133.143","country":"TW","country_name":"Taiwan","region_code":"TXG","in_eu":false,"continent":"AS"}
+2024/11/05 16:41:57 resp.Body: {"ip":"61.224.133.143","country":"TW","country_name":"Taiwan","region_code":"TXG","in_eu":false,"continent":"AS"}
+2024/11/05 16:41:57 resp.Body: {"ip":"107.189.29.215","country":"LU","country_name":"Luxembourg","region_code":"LU","in_eu":true,"continent":"EU"}
+2024/11/05 16:41:57 resp.Body: {"ip":"107.189.29.215","country":"LU","country_name":"Luxembourg","region_code":"LU","in_eu":true,"continent":"EU"}
+2024/11/05 16:41:57 resp.Body: {"ip":"184.174.96.224","country":"US","country_name":"United States","region_code":"DE","in_eu":false,"continent":"NA"}
+2024/11/05 16:41:57 resp.Body: {"ip":"184.174.96.224","country":"US","country_name":"United States","region_code":"DE","in_eu":false,"continent":"NA"}
+2024/11/05 16:41:57 resp.Body: {"ip":"209.200.246.141","country":"CA","country_name":"Canada","region_code":"ON","in_eu":false,"continent":"NA"}
+2024/11/05 16:41:57 resp.Body: {"ip":"209.200.246.141","country":"CA","country_name":"Canada","region_code":"ON","in_eu":false,"continent":"NA"}
+2024/11/05 16:41:57 resp.Body: {"ip":"87.121.61.171","country":"FR","country_name":"France","region_code":"GES","in_eu":true,"continent":"EU"}
+2024/11/05 16:41:57 resp.Body: {"ip":"83.147.17.189","country":"GB","country_name":"United Kingdom","region_code":"ENG","in_eu":true,"continent":"EU"}
+2024/11/05 16:41:57 resp.Body: {"ip":"83.147.17.189","country":"GB","country_name":"United Kingdom","region_code":"ENG","in_eu":true,"continent":"EU"}
+2024/11/05 16:41:58 resp.Body: {"ip":"61.224.133.143","country":"TW","country_name":"Taiwan","region_code":"TXG","in_eu":false,"continent":"AS"}
+2024/11/05 16:41:58 resp.Body: {"ip":"61.224.133.143","country":"TW","country_name":"Taiwan","region_code":"TXG","in_eu":false,"continent":"AS"}
+2024/11/05 16:41:58 resp.Body: {"ip":"107.189.29.215","country":"LU","country_name":"Luxembourg","region_code":"LU","in_eu":true,"continent":"EU"}
+2024/11/05 16:41:58 resp.Body: {"ip":"107.189.29.215","country":"LU","country_name":"Luxembourg","region_code":"LU","in_eu":true,"continent":"EU"}
+2024/11/05 16:41:58 resp.Body: {"ip":"184.174.96.224","country":"US","country_name":"United States","region_code":"DE","in_eu":false,"continent":"NA"}
+2024/11/05 16:41:58 resp.Body: {"ip":"184.174.96.224","country":"US","country_name":"United States","region_code":"DE","in_eu":false,"continent":"NA"}
+2024/11/05 16:41:58 resp.Body: {"ip":"87.121.61.171","country":"FR","country_name":"France","region_code":"GES","in_eu":true,"continent":"EU"}
 
-### [Hysteria 1.x (legacy)](https://v1.hysteria.network/)
+```
 
----
-
-<div class="feature-grid">
-  <div>
-    <h3>🛠️ Jack of all trades</h3>
-    <p>Wide range of modes including SOCKS5, HTTP Proxy, TCP/UDP Forwarding, Linux TProxy, TUN - with more features being added constantly.</p>
-  </div>
-
-  <div>
-    <h3>⚡ Blazing fast</h3>
-    <p>Powered by a customized QUIC protocol, Hysteria is designed to deliver unparalleled performance over unreliable and lossy networks.</p>
-  </div>
-
-  <div>
-    <h3>✊ Censorship resistant</h3>
-    <p>The protocol masquerades as standard HTTP/3 traffic, making it very difficult for censors to detect and block without widespread collateral damage.</p>
-  </div>
-  
-  <div>
-    <h3>💻 Cross-platform</h3>
-    <p>We have builds for every major platform and architecture. Deploy anywhere & use everywhere. Not to mention the long list of 3rd party apps.</p>
-  </div>
-
-  <div>
-    <h3>🔗 Easy integration</h3>
-    <p>With built-in support for custom authentication, traffic statistics & access control, Hysteria is easy to integrate into your infrastructure.</p>
-  </div>
-  
-  <div>
-    <h3>🤗 Chill and supportive</h3>
-    <p>We have well-documented specifications and code for developers to contribute and/or build their own apps. And a helpful community, too.</p>
-  </div>
-</div>
-
----
-
-**If you find Hysteria useful, consider giving it a ⭐️!**
-
-[![Star History Chart](https://api.star-history.com/svg?repos=apernet/hysteria&type=Date)](https://star-history.com/#apernet/hysteria&Date)
+成果是一个[壁纸网站](https://paral.us.kg/):

@@ -438,6 +438,7 @@ func (c *clientConfig) Config() (*client.Config, error) {
 			return nil, err
 		}
 	}
+	logger.Info(" loade client config:", zap.String("addr", hyConfig.ServerAddr.String()))
 	return hyConfig, nil
 }
 
